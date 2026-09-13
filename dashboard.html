@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Native Teacher | حسابي</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Fredoka:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{ --teal-900:#04342C; --teal-800:#085041; --teal-700:#0F6E56; --teal-100:#9FE1CB; --teal-50:#E1F5EE;
+         --coral-500:#D85A30; --coral-100:#F5C4B3; --cream:#FFF8EC; --white:#fff;
+         --ink:#2C2622; --ink-soft:#6B5D52; --border:#E5DFD2; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Tajawal',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; }
+  body.lang-en { direction:ltr; text-align:left; }
+  .wrap { max-width:900px; margin:0 auto; padding:20px; }
+  header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; gap:10px; }
+  .logo { font-family:'Fredoka',sans-serif; font-size:20px; color:var(--teal-800); }
+  .who { font-size:13px; color:var(--ink-soft); }
+  .logout, .langbtn { background:none; border:1.5px solid var(--teal-700); color:var(--teal-800); border-radius:16px;
+            padding:7px 14px; font-size:12px; cursor:pointer; font-family:inherit; }
+
+  .tabs { display:flex; gap:8px; overflow-x:auto; margin-bottom:18px; padding-bottom:4px; }
+  .tabbtn { white-space:nowrap; padding:9px 16px; border-radius:16px; background:var(--white); border:1px solid var(--border);
+            font-size:13px; font-weight:500; color:var(--ink-soft); cursor:pointer; font-family:inherit; }
+  .tabbtn.active { background:var(--teal-800); color:var(--white); border-color:var(--teal-800); }
+
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  .card { background:var(--white); border-radius:18px; padding:18px; margin-bottom:14px; border:1px solid rgba(8,80,65,.08); }
+  .card h3 { font-size:15px; margin-bottom:12px; color:var(--teal-900); }
+  .credit-badge { background:var(--teal-800); color:var(--white); border-radius:16px; padding:16px 20px; text-align:center; margin-bottom:16px; }
+  .credit-badge .num { font-family:'Fredoka',sans-serif; font-size:30px; }
+  .credit-badge .label { font-size:12px; color:var(--teal-100); }
+
+  .row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #F1ECE0; font-size:13.5px; gap:10px; }
+  .row:last-child { border-bottom:none; }
+  .pill { font-size:11px; padding:3px 10px; border-radius:10px; background:var(--teal-50); color:var(--teal-700); white-space:nowrap; }
+  .pill.warn { background:var(--coral-100); color:#712B13; }
+
+  button.action { background:var(--coral-500); color:#fff; border:none; padding:8px 14px; border-radius:10px;
+                  font-size:12.5px; cursor:pointer; font-family:inherit; }
+  button.action.secondary { background:transparent; border:1.5px solid var(--teal-700); color:var(--teal-800); }
+  button.action:disabled { opacity:.5; cursor:not-allowed; }
+
+  input, select, textarea { width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--border);
+         font-family:inherit; font-size:13.5px; margin-bottom:10px; background:#FCFAF4; }
+  label { font-size:12.5px; color:var(--ink-soft); display:block; margin-bottom:4px; }
+  .msg { font-size:12.5px; margin-top:6px; }
+  .msg.ok { color:var(--teal-700); } .msg.error { color:#B3261E; }
+  .empty { color:var(--ink-soft); font-size:13px; text-align:center; padding:16px 0; }
+  .radio-opt { display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13.5px; }
+  [data-lang="en"] { display:none; }
+  body.lang-en [data-lang="ar"] { display:none; }
+  body.lang-en [data-lang="en"] { display:inline; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="logo">Native Teacher</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="who" id="whoName">...</span>
+      <button class="langbtn" id="langBtn">EN</button>
+      <button class="logout" id="logoutBtn"><span data-lang="ar">خروج</span><span data-lang="en">Log out</span></button>
+    </div>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+
+  <!-- ============ STUDENT ============ -->
+  <div class="panel" id="panel-student">
+    <div class="credit-badge">
+      <div class="num" id="studentCredits">0</div>
+      <div class="label"><span data-lang="ar">حصة متبقية</span><span data-lang="en">lessons remaining</span></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">احجز حصة</span><span data-lang="en">Book a lesson</span></h3>
+      <div id="slotsList"><p class="empty">...</p></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">حجوزاتي</span><span data-lang="en">My bookings</span></h3>
+      <div id="myBookings"><p class="empty">...</p></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">الواجبات</span><span data-lang="en">Homework</span></h3>
+      <div id="hwList"><p class="empty">...</p></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">اختبارات وألعاب</span><span data-lang="en">Exams &amp; games</span></h3>
+      <div id="quizList"><p class="empty">...</p></div>
+    </div>
+  </div>
+
+  <!-- ============ TEACHER ============ -->
+  <div class="panel" id="panel-teacher">
+    <div class="card">
+      <h3><span data-lang="ar">إضافة ميعاد متاح</span><span data-lang="en">Add an available slot</span></h3>
+      <label><span data-lang="ar">نوع الحصة</span><span data-lang="en">Lesson type</span></label>
+      <select id="slotType">
+        <option value="individual" data-lang-ar="فردية" data-lang-en="Individual">فردية</option>
+        <option value="group" data-lang-ar="جماعية" data-lang-en="Group">جماعية</option>
+      </select>
+      <label><span data-lang="ar">التاريخ والوقت</span><span data-lang="en">Date and time</span></label>
+      <input type="datetime-local" id="slotTime">
+      <label><span data-lang="ar">عنوان الحصة الجماعية (لو جماعية)</span><span data-lang="en">Group session title (if group)</span></label>
+      <input type="text" id="slotTitle" data-ph-ar="مثال: Movie Night" data-ph-en="e.g. Movie Night">
+      <button class="action" id="addSlotBtn"><span data-lang="ar">إضافة الميعاد</span><span data-lang="en">Add slot</span></button>
+      <div class="msg" id="slotMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">جدولي وحجوزاتي</span><span data-lang="en">My schedule &amp; bookings</span></h3>
+      <div id="teacherBookings"><p class="empty">...</p></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">طلابي</span><span data-lang="en">My students</span></h3>
+      <div id="teacherStudents"><p class="empty">...</p></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">إضافة درس / منهج</span><span data-lang="en">Add a lesson / curriculum</span></h3>
+      <label><span data-lang="ar">اسم المنهج</span><span data-lang="en">Course name</span></label>
+      <input type="text" id="courseTitle" data-ph-ar="مثال: Beginners Course" data-ph-en="e.g. Beginners Course">
+      <label><span data-lang="ar">المستوى</span><span data-lang="en">Level</span></label>
+      <input type="text" id="courseLevel" data-ph-ar="مثال: A1" data-ph-en="e.g. A1">
+      <label><span data-lang="ar">عنوان الدرس</span><span data-lang="en">Lesson title</span></label>
+      <input type="text" id="lessonTitle">
+      <label><span data-lang="ar">رابط فيديو (اختياري)</span><span data-lang="en">Video URL (optional)</span></label>
+      <input type="text" id="lessonVideo">
+      <button class="action" id="addLessonBtn"><span data-lang="ar">حفظ الدرس</span><span data-lang="en">Save lesson</span></button>
+      <div class="msg" id="lessonMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">إضافة واجب</span><span data-lang="en">Add homework</span></h3>
+      <label><span data-lang="ar">لطالب معين (اختياري)</span><span data-lang="en">For a specific student (optional)</span></label>
+      <select id="hwStudent"></select>
+      <label><span data-lang="ar">المستوى</span><span data-lang="en">Level</span></label>
+      <input type="text" id="hwLevel" data-ph-ar="مثال: A1" data-ph-en="e.g. A1">
+      <label><span data-lang="ar">تعليمات الواجب</span><span data-lang="en">Homework instructions</span></label>
+      <textarea id="hwInstructions" rows="3"></textarea>
+      <label><span data-lang="ar">تاريخ التسليم</span><span data-lang="en">Due date</span></label>
+      <input type="date" id="hwDue">
+      <button class="action" id="addHwBtn"><span data-lang="ar">إضافة الواجب</span><span data-lang="en">Add homework</span></button>
+      <div class="msg" id="hwMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">تصحيح الواجبات</span><span data-lang="en">Grade homework</span></h3>
+      <div id="hwSubmissions"><p class="empty">...</p></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">إضافة سؤال (بنك أسئلة / امتحان / لعبة)</span><span data-lang="en">Add a question (bank / exam / game)</span></h3>
+      <label><span data-lang="ar">الغرض</span><span data-lang="en">Purpose</span></label>
+      <select id="qPurpose">
+        <option value="bank" data-lang-ar="بنك أسئلة" data-lang-en="Question bank">بنك أسئلة</option>
+        <option value="exam" data-lang-ar="امتحان" data-lang-en="Exam">امتحان</option>
+        <option value="game" data-lang-ar="لعبة" data-lang-en="Game">لعبة</option>
+      </select>
+      <label><span data-lang="ar">اسم المجموعة (اسم الامتحان أو اللعبة)</span><span data-lang="en">Group name (exam or game title)</span></label>
+      <input type="text" id="qGroup" data-ph-ar="مثال: Unit 1 Test" data-ph-en="e.g. Unit 1 Test">
+      <label><span data-lang="ar">المستوى</span><span data-lang="en">Level</span></label>
+      <input type="text" id="qLevel" data-ph-ar="مثال: A1" data-ph-en="e.g. A1">
+      <label><span data-lang="ar">نص السؤال</span><span data-lang="en">Question text</span></label>
+      <textarea id="qText" rows="2"></textarea>
+      <label><span data-lang="ar">الاختيارات (افصلي بينهم بفاصلة ,)</span><span data-lang="en">Options (comma separated)</span></label>
+      <input type="text" id="qOptions" placeholder="Apple, Banana, Orange">
+      <label><span data-lang="ar">الإجابة الصحيحة</span><span data-lang="en">Correct answer</span></label>
+      <input type="text" id="qAnswer">
+      <button class="action" id="addQBtn"><span data-lang="ar">حفظ السؤال</span><span data-lang="en">Save question</span></button>
+      <div class="msg" id="qMsg"></div>
+    </div>
+  </div>
+
+  <!-- ============ OWNER ============ -->
+  <div class="panel" id="panel-owner">
+    <div class="card">
+      <h3><span data-lang="ar">إضافة طالب يدويًا</span><span data-lang="en">Add a student manually</span></h3>
+      <label><span data-lang="ar">الاسم بالكامل</span><span data-lang="en">Full name</span></label><input type="text" id="manStudentName">
+      <label><span data-lang="ar">الموبايل</span><span data-lang="en">Phone</span></label><input type="text" id="manStudentPhone">
+      <label><span data-lang="ar">البريد الإلكتروني (اختياري)</span><span data-lang="en">Email (optional)</span></label><input type="email" id="manStudentEmail">
+      <label><span data-lang="ar">رصيد الحصص المبدئي</span><span data-lang="en">Starting credit balance</span></label><input type="number" id="manStudentCredits" value="0">
+      <button class="action" id="addManStudentBtn"><span data-lang="ar">إضافة الطالب</span><span data-lang="en">Add student</span></button>
+      <div class="msg" id="manStudentMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">إضافة رصيد / اشتراك لطالب موجود</span><span data-lang="en">Add credit / subscription to a student</span></h3>
+      <label><span data-lang="ar">ابحثي بالاسم</span><span data-lang="en">Search by name</span></label>
+      <input type="text" id="creditSearch">
+      <div id="creditSearchResults"></div>
+      <input type="hidden" id="creditStudentId">
+      <label><span data-lang="ar">اسم الباقة</span><span data-lang="en">Package name</span></label><input type="text" id="packageName" data-ph-ar="مثال: باقة 8 حصص" data-ph-en="e.g. 8-lesson package">
+      <label><span data-lang="ar">عدد الحصص المضافة</span><span data-lang="en">Number of credits to add</span></label><input type="number" id="creditsToAdd" value="0">
+      <label><span data-lang="ar">المبلغ المدفوع (اختياري)</span><span data-lang="en">Amount paid (optional)</span></label><input type="number" id="amountPaid">
+      <button class="action" id="addCreditBtn"><span data-lang="ar">تسجيل الدفع وإضافة الرصيد</span><span data-lang="en">Record payment &amp; add credit</span></button>
+      <div class="msg" id="creditMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">ترقية حساب لمدرس</span><span data-lang="en">Promote an account to teacher</span></h3>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px">
+        <span data-lang="ar">المدرس لازم يكون عمل حساب طالب عادي الأول، بعدين ابحثي عنه هنا وحوّليه لمدرس.</span>
+        <span data-lang="en">The teacher must first sign up as a regular student, then search for them here to promote.</span>
+      </p>
+      <label><span data-lang="ar">ابحثي بالإيميل</span><span data-lang="en">Search by email</span></label>
+      <input type="text" id="teacherSearch">
+      <div id="teacherSearchResults"></div>
+      <input type="hidden" id="teacherProfileId">
+      <label><span data-lang="ar">نبذة تعريفية</span><span data-lang="en">Bio</span></label><textarea id="tBio" rows="2"></textarea>
+      <label><span data-lang="ar">رابط الصورة</span><span data-lang="en">Photo URL</span></label><input type="text" id="tPhoto">
+      <label><span data-lang="ar">رابط الفيديو التعريفي</span><span data-lang="en">Intro video URL</span></label><input type="text" id="tVideo">
+      <label><span data-lang="ar">لينك الزووم الثابت</span><span data-lang="en">Fixed Zoom link</span></label><input type="text" id="tZoom">
+      <button class="action" id="makeTeacherBtn"><span data-lang="ar">جعله مدرس</span><span data-lang="en">Make teacher</span></button>
+      <div class="msg" id="teacherMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">كل الطلاب</span><span data-lang="en">All students</span></h3>
+      <div id="allStudents"><p class="empty">...</p></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">كل الحجوزات</span><span data-lang="en">All bookings</span></h3>
+      <div id="allBookings"><p class="empty">...</p></div>
+    </div>
+
+    <div class="card">
+      <h3><span data-lang="ar">الإيرادات (المسجّلة يدويًا)</span><span data-lang="en">Revenue (manually recorded)</span></h3>
+      <div id="revenueBox"><p class="empty">...</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://qdwzaftxnrhdgjisctjl.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_lKp3qizAsITLNnSl1aMt9w_BB3XpvMC";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let ME = null;
+  let LANG = 'ar';
+  let CURRENT_VIEW = 'student';
+
+  // ---------- Translation dictionary for JS-generated content ----------
+  const T = {
+    loading:        { ar:'جاري التحميل...', en:'Loading...' },
+    noSlots:        { ar:'لا توجد مواعيد متاحة حاليًا', en:'No available slots right now' },
+    groupLesson:    { ar:'حصة جماعية', en:'Group lesson' },
+    individualWith: { ar:name => `حصة فردية مع ${name}`, en:name => `Individual lesson with ${name}` },
+    bookBtn:        { ar:'احجز (1 حصة)', en:'Book (1 credit)' },
+    noBookings:     { ar:'لا توجد حجوزات بعد', en:'No bookings yet' },
+    zoomEnter:      { ar:'دخول Zoom', en:'Join Zoom' },
+    cancelBtn:      { ar:'إلغاء', en:'Cancel' },
+    noHomework:     { ar:'لا توجد واجبات حاليًا', en:'No homework right now' },
+    dueLabel:       { ar:'تسليم', en:'Due' },
+    submitted:      { ar:'تم التسليم', en:'Submitted' },
+    grading:        { ar:'(قيد التصحيح)', en:'(being graded)' },
+    gradeLabel:     { ar:' — التقييم: ', en:' — Grade: ' },
+    answerPh:       { ar:'اكتبي إجابتك هنا', en:'Write your answer here' },
+    submitBtn:      { ar:'تسليم', en:'Submit' },
+    noQuizzes:      { ar:'لا توجد اختبارات أو ألعاب متاحة لمستواك حاليًا', en:'No exams or games available for your level right now' },
+    generalGroup:   { ar:'عام', en:'General' },
+    noCreditsAlert: { ar:'رصيدك من الحصص خلص، تواصلي معنا على واتساب لتجديد الباقة', en:'You are out of credits — contact us on WhatsApp to renew your package' },
+    errorRetry:     { ar:'حدث خطأ، يرجى المحاولة مرة أخرى', en:'Something went wrong, please try again' },
+    scoreAlert:     { ar:(s,t)=>`نتيجتك: ${s} من ${t}`, en:(s,t)=>`Your score: ${s} out of ${t}` },
+    pickTime:       { ar:'اختاري الميعاد', en:'Please pick a time' },
+    teacherOnly:    { ar:'الميزة دي لحساب مدرس بس', en:'This feature is for teacher accounts only' },
+    added:          { ar:'تمت الإضافة', en:'Added successfully' },
+    error:          { ar:'حصل خطأ', en:'Something went wrong' },
+    fillCourse:     { ar:'اكتبي اسم المنهج وعنوان الدرس', en:'Please fill in the course name and lesson title' },
+    lessonSaved:    { ar:'تم حفظ الدرس', en:'Lesson saved' },
+    fillQuestion:   { ar:'يرجى إكمال جميع الحقول (اختيارين على الأقل)', en:'Please fill all fields (at least two options)' },
+    questionSaved:  { ar:'تم حفظ السؤال', en:'Question saved' },
+    fillHwInstr:    { ar:'اكتبي تعليمات الواجب', en:'Please write the homework instructions' },
+    hwAdded:        { ar:'تم إضافة الواجب', en:'Homework added' },
+    allLevelOpt:    { ar:'-- كل طلاب المستوى --', en:'-- All students at this level --' },
+    noStudentsYet:  { ar:'لا يوجد طلاب مرتبطون بك بعد', en:'No students linked to you yet' },
+    noGradingLeft:  { ar:'لا توجد واجبات بحاجة إلى تصحيح', en:'No homework left to grade' },
+    gradePh:        { ar:'التقييم (مثال: ممتاز)', en:'Grade (e.g. Excellent)' },
+    saveGrade:      { ar:'حفظ التقييم', en:'Save grade' },
+    fillStudentName:{ ar:'اكتبي اسم الطالب', en:'Please enter the student name' },
+    studentAdded:   { ar:'تم إضافة الطالب', en:'Student added' },
+    pickStudentCredits: { ar:'اختاري طالب وعدد حصص أكبر من صفر', en:'Please select a student and a credit amount above zero' },
+    paymentRecorded:{ ar:'تم تسجيل الدفع وإضافة الرصيد', en:'Payment recorded and credit added' },
+    pickAccountFirst: { ar:'ابحثي واختاري حساب أولاً', en:'Please search and select an account first' },
+    teacherMade:    { ar:'تم! أصبح الحساب مدرسًا الآن', en:'Done! They are now a teacher' },
+    teacherMakeError: { ar:'حصل خطأ (يمكن الحساب ده مدرس بالفعل)', en:'Something went wrong (maybe this account is already a teacher)' },
+    noStudents:     { ar:'لا يوجد طلاب بعد', en:'No students yet' },
+    noBookingsOwner:{ ar:'لا توجد حجوزات بعد', en:'No bookings yet' },
+    lessonsUnit:    { ar:'حصة', en:'credits' },
+    totalRecorded:  { ar:'إجمالي المسجّل', en:'Total recorded' },
+    profileLoading: { ar:'حسابك لا يزال قيد الإعداد، يرجى تحديث الصفحة بعد دقيقة', en:'Your account is still being set up, please refresh in a minute' },
+    accountSetupWait: { ar:'حسابك لا يزال قيد الإعداد', en:'Your account is being set up' }
+  };
+  const tt = key => T[key][LANG];
+
+  const ROLE_LABEL = { owner: {ar:'المالك', en:'Owner'}, teacher: {ar:'مدرس', en:'Teacher'}, student: {ar:'طالب', en:'Student'} };
+  const TAB_LABEL = { student: {ar:'حسابي كطالب', en:'My student account'}, teacher: {ar:'لوحة المدرس', en:'Teacher dashboard'}, owner: {ar:'لوحة المالك', en:'Owner dashboard'} };
+  const STATUS_LABEL = {
+    upcoming: {ar:'قادمة', en:'Upcoming'}, completed: {ar:'مكتملة', en:'Completed'},
+    cancelled: {ar:'ملغاة', en:'Cancelled'}, no_show: {ar:'غياب', en:'No-show'}
+  };
+  const roleLabel = r => (ROLE_LABEL[r] || {ar:r,en:r})[LANG];
+  const bookingStatusAr = s => (STATUS_LABEL[s] || {ar:s,en:s})[LANG];
+
+  function applyPlaceholders() {
+    document.querySelectorAll('[data-ph-ar]').forEach(el => {
+      el.placeholder = LANG === 'ar' ? el.dataset.phAr : el.dataset.phEn;
+    });
+  }
+  function applySelectOptions() {
+    document.querySelectorAll('option[data-lang-ar]').forEach(opt => {
+      opt.textContent = LANG === 'ar' ? opt.dataset.langAr : opt.dataset.langEn;
+    });
+  }
+  applyPlaceholders(); applySelectOptions();
+
+  document.getElementById('langBtn').addEventListener('click', () => {
+    LANG = LANG === 'ar' ? 'en' : 'ar';
+    document.documentElement.lang = LANG;
+    document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+    document.body.classList.toggle('lang-en', LANG === 'en');
+    document.getElementById('langBtn').textContent = LANG === 'ar' ? 'EN' : 'AR';
+    applyPlaceholders(); applySelectOptions();
+    if (ME) {
+      document.getElementById('whoName').textContent = `${ME.full_name} (${roleLabel(ME.role)})`;
+      buildTabs(ME.role, CURRENT_VIEW);
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    window.location.href = 'index.html';
+  });
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'auth.html'; return; }
+
+    const { data: profile, error } = await sb
+      .from('profiles').select('*').eq('auth_user_id', session.user.id).maybeSingle();
+
+    if (error || !profile) {
+      document.getElementById('whoName').textContent = tt('profileLoading');
+      return;
+    }
+    ME = profile;
+    document.getElementById('whoName').textContent = `${profile.full_name} (${roleLabel(profile.role)})`;
+    buildTabs(profile.role);
+  }
+
+  function buildTabs(role, preferredView) {
+    const tabsEl = document.getElementById('tabs');
+    const views = role === 'owner' ? ['student','teacher','owner']
+                : role === 'teacher' ? ['teacher']
+                : ['student'];
+    const view = preferredView && views.includes(preferredView) ? preferredView : views[0];
+
+    tabsEl.innerHTML = views.map(v =>
+      `<button class="tabbtn ${v===view?'active':''}" data-view="${v}">${TAB_LABEL[v][LANG]}</button>`).join('');
+
+    tabsEl.querySelectorAll('.tabbtn').forEach(btn => {
+      btn.addEventListener('click', () => showPanel(btn.dataset.view, tabsEl));
+    });
+    showPanel(view, tabsEl);
+  }
+
+  function showPanel(view, tabsEl) {
+    CURRENT_VIEW = view;
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + view).classList.add('active');
+    tabsEl.querySelectorAll('.tabbtn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    if (view === 'student') loadStudentPanel();
+    if (view === 'teacher') loadTeacherPanel();
+    if (view === 'owner') loadOwnerPanel();
+  }
+
+  // ============================================================
+  // STUDENT PANEL
+  // ============================================================
+  async function loadStudentPanel() {
+    document.getElementById('studentCredits').textContent = ME.credits;
+
+    const { data: slots } = await sb
+      .from('availability_slots')
+      .select('id, slot_time, type, title, capacity, is_booked, teacher_id, teachers(profiles(full_name))')
+      .gt('slot_time', new Date().toISOString())
+      .order('slot_time');
+
+    const slotsList = document.getElementById('slotsList');
+    const openSlots = (slots || []).filter(s => s.type === 'group' || !s.is_booked);
+    slotsList.innerHTML = openSlots.length ? openSlots.map(s => {
+      const tName = s.teachers && s.teachers.profiles ? s.teachers.profiles.full_name : 'Teacher';
+      const label = s.type === 'group' ? (s.title || tt('groupLesson')) : T.individualWith[LANG](tName);
+      return `<div class="row">
+        <span>${label}<br><span style="color:var(--ink-soft);font-size:12px">${new Date(s.slot_time).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')}</span></span>
+        <button class="action" onclick="bookSlot('${s.id}','${s.teacher_id}')">${tt('bookBtn')}</button>
+      </div>`;
+    }).join('') : `<p class="empty">${tt('noSlots')}</p>`;
+
+    const { data: bookings } = await sb
+      .from('bookings')
+      .select('id, status, availability_slots(slot_time,type,title,teachers(profiles(full_name),zoom_link))')
+      .eq('student_id', ME.id)
+      .order('created_at', { ascending: false });
+
+    const myBookings = document.getElementById('myBookings');
+    myBookings.innerHTML = (bookings && bookings.length) ? bookings.map(b => {
+      const slot = b.availability_slots;
+      const tName = slot && slot.teachers && slot.teachers.profiles ? slot.teachers.profiles.full_name : '';
+      const zoom = slot && slot.teachers ? slot.teachers.zoom_link : '';
+      const when = slot ? new Date(slot.slot_time).toLocaleString(LANG==='ar'?'ar-EG':'en-GB') : '';
+      const canCancel = b.status === 'upcoming' && slot && (new Date(slot.slot_time) - new Date()) > 24*3600*1000;
+      const zoomLink = (b.status === 'upcoming' && zoom) ? ` <a href="${zoom}" target="_blank">${tt('zoomEnter')}</a>` : '';
+      return `<div class="row">
+        <span>${tName} — ${when}${zoomLink}</span>
+        <span>
+          <span class="pill ${b.status==='cancelled'?'warn':''}">${bookingStatusAr(b.status)}</span>
+          ${canCancel ? `<button class="action secondary" onclick="cancelBooking('${b.id}')">${tt('cancelBtn')}</button>` : ''}
+        </span>
+      </div>`;
+    }).join('') : `<p class="empty">${tt('noBookings')}</p>`;
+
+    const { data: hw } = await sb
+      .from('homework_assignments')
+      .select('id, instructions, due_date, homework_submissions(id,answer_text,grade)')
+      .or(`student_id.eq.${ME.id},level.eq.${ME.level || '__none__'}`);
+
+    const hwList = document.getElementById('hwList');
+    hwList.innerHTML = (hw && hw.length) ? hw.map(a => {
+      const sub = (a.homework_submissions || [])[0];
+      return `<div class="card" style="margin-bottom:8px;background:#FCFAF4">
+        <div style="font-size:13px;margin-bottom:8px">${a.instructions || ''} <span style="color:var(--ink-soft)">(${tt('dueLabel')}: ${a.due_date || '-'})</span></div>
+        ${sub ? `<div class="msg ok">${tt('submitted')}${sub.grade ? tt('gradeLabel')+sub.grade : ' '+tt('grading')}</div>`
+              : `<textarea id="hwAnswer-${a.id}" rows="2" placeholder="${tt('answerPh')}"></textarea>
+                 <button class="action" onclick="submitHomework('${a.id}')">${tt('submitBtn')}</button>`}
+      </div>`;
+    }).join('') : `<p class="empty">${tt('noHomework')}</p>`;
+
+    const { data: questions } = await sb
+      .from('questions')
+      .select('*')
+      .in('purpose', ['exam','game'])
+      .or(`level.eq.${ME.level || '__none__'},level.is.null`);
+
+    const quizList = document.getElementById('quizList');
+    if (!questions || questions.length === 0) {
+      quizList.innerHTML = `<p class="empty">${tt('noQuizzes')}</p>`;
+    } else {
+      const groups = {};
+      questions.forEach(q => { (groups[q.group_title || tt('generalGroup')] = groups[q.group_title || tt('generalGroup')] || []).push(q); });
+      quizList.innerHTML = Object.entries(groups).map(([title, qs]) => `
+        <div class="card" style="margin-bottom:8px;background:#FCFAF4">
+          <h3>${title}</h3>
+          <form onsubmit="return submitQuiz(event, '${title}', ${JSON.stringify(qs.map(q=>({id:q.id,correct:q.correct_answer}))).replace(/"/g,'&quot;')})">
+            ${qs.map(q => `
+              <div style="margin-bottom:10px">
+                <div style="font-size:13.5px;margin-bottom:4px">${q.question_text}</div>
+                ${(q.options || []).map(o => `
+                  <label class="radio-opt"><input type="radio" name="q-${q.id}" value="${o}"> ${o}</label>
+                `).join('')}
+              </div>`).join('')}
+            <button class="action" type="submit">${tt('submitBtn')}</button>
+          </form>
+        </div>`).join('');
+    }
+  }
+
+  window.bookSlot = async function(slotId, teacherId) {
+    if (ME.credits <= 0) { alert(tt('noCreditsAlert')); return; }
+    const { error: bErr } = await sb.from('bookings').insert({ student_id: ME.id, teacher_id: teacherId, slot_id: slotId, status: 'upcoming' });
+    if (bErr) { alert(tt('errorRetry')); return; }
+    await sb.from('availability_slots').update({ is_booked: true }).eq('id', slotId);
+    const newCredits = ME.credits - 1;
+    await sb.from('profiles').update({ credits: newCredits }).eq('id', ME.id);
+    ME.credits = newCredits;
+    loadStudentPanel();
+  };
+
+  window.cancelBooking = async function(bookingId) {
+    await sb.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId);
+    const newCredits = ME.credits + 1;
+    await sb.from('profiles').update({ credits: newCredits }).eq('id', ME.id);
+    ME.credits = newCredits;
+    loadStudentPanel();
+  };
+
+  window.submitHomework = async function(assignmentId) {
+    const text = document.getElementById('hwAnswer-' + assignmentId).value;
+    await sb.from('homework_submissions').insert({ assignment_id: assignmentId, student_id: ME.id, answer_text: text });
+    loadStudentPanel();
+  };
+
+  window.submitQuiz = function(event, title, questions) {
+    event.preventDefault();
+    const form = event.target;
+    let score = 0;
+    questions.forEach(q => {
+      const chosen = form.querySelector(`input[name="q-${q.id}"]:checked`);
+      if (chosen && chosen.value === q.correct) score++;
+    });
+    sb.from('exam_results').insert({ student_id: ME.id, group_title: title, score, total: questions.length })
+      .then(() => alert(T.scoreAlert[LANG](score, questions.length)));
+    return false;
+  };
+
+  // ============================================================
+  // TEACHER PANEL
+  // ============================================================
+  async function loadTeacherPanel() {
+    const myTeacherId = ME.role === 'teacher' ? ME.id : null;
+
+    document.getElementById('addSlotBtn').onclick = async () => {
+      const type = document.getElementById('slotType').value;
+      const time = document.getElementById('slotTime').value;
+      const title = document.getElementById('slotTitle').value;
+      if (!time) { setPanelMsg('slotMsg', tt('pickTime'), 'error'); return; }
+      if (!myTeacherId) { setPanelMsg('slotMsg', tt('teacherOnly'), 'error'); return; }
+      const { error } = await sb.from('availability_slots').insert({
+        teacher_id: myTeacherId, slot_time: new Date(time).toISOString(), type, title: type==='group'?title:null
+      });
+      setPanelMsg('slotMsg', error ? tt('error') : tt('added'), error ? 'error' : 'ok');
+      if (!error) loadTeacherPanel();
+    };
+
+    document.getElementById('addLessonBtn').onclick = async () => {
+      const cTitle = document.getElementById('courseTitle').value.trim();
+      const cLevel = document.getElementById('courseLevel').value.trim();
+      const lTitle = document.getElementById('lessonTitle').value.trim();
+      const lVideo = document.getElementById('lessonVideo').value.trim();
+      if (!cTitle || !lTitle) { setPanelMsg('lessonMsg', tt('fillCourse'), 'error'); return; }
+      let { data: course } = await sb.from('courses').select('id').eq('title', cTitle).maybeSingle();
+      if (!course) {
+        const { data: newCourse } = await sb.from('courses').insert({ title: cTitle, level: cLevel }).select().single();
+        course = newCourse;
+      }
+      const { error } = await sb.from('lessons').insert({ course_id: course.id, title: lTitle, video_url: lVideo });
+      setPanelMsg('lessonMsg', error ? tt('error') : tt('lessonSaved'), error ? 'error' : 'ok');
+    };
+
+    document.getElementById('addQBtn').onclick = async () => {
+      const purpose = document.getElementById('qPurpose').value;
+      const group_title = document.getElementById('qGroup').value.trim();
+      const level = document.getElementById('qLevel').value.trim();
+      const question_text = document.getElementById('qText').value.trim();
+      const options = document.getElementById('qOptions').value.split(',').map(s => s.trim()).filter(Boolean);
+      const correct_answer = document.getElementById('qAnswer').value.trim();
+      if (!question_text || options.length < 2 || !correct_answer) {
+        setPanelMsg('qMsg', tt('fillQuestion'), 'error'); return;
+      }
+      const { error } = await sb.from('questions').insert({
+        purpose, group_title, level, question_text, options, correct_answer, created_by: ME.id
+      });
+      setPanelMsg('qMsg', error ? tt('error') : tt('questionSaved'), error ? 'error' : 'ok');
+    };
+
+    document.getElementById('addHwBtn').onclick = async () => {
+      const studentId = document.getElementById('hwStudent').value || null;
+      const level = document.getElementById('hwLevel').value.trim() || null;
+      const instructions = document.getElementById('hwInstructions').value.trim();
+      const due_date = document.getElementById('hwDue').value || null;
+      if (!instructions) { setPanelMsg('hwMsg', tt('fillHwInstr'), 'error'); return; }
+      const { error } = await sb.from('homework_assignments').insert({
+        teacher_id: myTeacherId, student_id: studentId, level, instructions, due_date
+      });
+      setPanelMsg('hwMsg', error ? tt('error') : tt('hwAdded'), error ? 'error' : 'ok');
+    };
+
+    let bookingsQuery = sb.from('bookings')
+      .select('id, status, profiles(full_name), availability_slots(slot_time,type,title)')
+      .order('created_at', { ascending: false });
+    if (myTeacherId) bookingsQuery = bookingsQuery.eq('teacher_id', myTeacherId);
+    const { data: bookings } = await bookingsQuery;
+
+    document.getElementById('teacherBookings').innerHTML = (bookings && bookings.length)
+      ? bookings.map(b => {
+          const slot = b.availability_slots;
+          const when = slot ? new Date(slot.slot_time).toLocaleString(LANG==='ar'?'ar-EG':'en-GB') : '';
+          const sName = b.profiles ? b.profiles.full_name : '';
+          return `<div class="row"><span>${sName} — ${when}</span><span class="pill">${bookingStatusAr(b.status)}</span></div>`;
+        }).join('')
+      : `<p class="empty">${tt('noBookings')}</p>`;
+
+    const names = new Map();
+    (bookings || []).forEach(b => { if (b.profiles) names.set(b.profiles.full_name, true); });
+    const studentSelect = document.getElementById('hwStudent');
+    studentSelect.innerHTML = `<option value="">${tt('allLevelOpt')}</option>` +
+      Array.from(names.keys()).map(n => `<option>${n}</option>`).join('');
+    document.getElementById('teacherStudents').innerHTML = names.size
+      ? Array.from(names.keys()).map(n => `<div class="row"><span>${n}</span></div>`).join('')
+      : `<p class="empty">${tt('noStudentsYet')}</p>`;
+
+    const { data: subs } = await sb.from('homework_submissions')
+      .select('id, answer_text, grade, profiles(full_name), homework_assignments(instructions)')
+      .is('grade', null);
+    document.getElementById('hwSubmissions').innerHTML = (subs && subs.length)
+      ? subs.map(s => `
+        <div class="card" style="margin-bottom:8px;background:#FCFAF4">
+          <div style="font-size:13px;margin-bottom:6px"><b>${s.profiles ? s.profiles.full_name : ''}</b>: ${s.answer_text || ''}</div>
+          <input type="text" id="grade-${s.id}" placeholder="${tt('gradePh')}">
+          <button class="action" onclick="gradeSubmission('${s.id}')">${tt('saveGrade')}</button>
+        </div>`).join('')
+      : `<p class="empty">${tt('noGradingLeft')}</p>`;
+  }
+
+  window.gradeSubmission = async function(id) {
+    const grade = document.getElementById('grade-' + id).value.trim();
+    if (!grade) return;
+    await sb.from('homework_submissions').update({ grade }).eq('id', id);
+    loadTeacherPanel();
+  };
+
+  function setPanelMsg(id, text, type) {
+    const el = document.getElementById(id);
+    el.textContent = text; el.className = 'msg ' + type;
+  }
+
+  // ============================================================
+  // OWNER PANEL
+  // ============================================================
+  async function loadOwnerPanel() {
+    document.getElementById('addManStudentBtn').onclick = async () => {
+      const full_name = document.getElementById('manStudentName').value.trim();
+      const phone = document.getElementById('manStudentPhone').value.trim();
+      const email = document.getElementById('manStudentEmail').value.trim() || null;
+      const credits = parseInt(document.getElementById('manStudentCredits').value) || 0;
+      if (!full_name) { setPanelMsg('manStudentMsg', tt('fillStudentName'), 'error'); return; }
+      const { error } = await sb.from('profiles').insert({ full_name, phone, email, credits, role: 'student' });
+      setPanelMsg('manStudentMsg', error ? tt('error') : tt('studentAdded'), error ? 'error' : 'ok');
+      if (!error) loadOwnerPanel();
+    };
+
+    document.getElementById('creditSearch').addEventListener('input', async (e) => {
+      const q = e.target.value.trim();
+      if (q.length < 2) return;
+      const { data } = await sb.from('profiles').select('id, full_name, email').eq('role', 'student').ilike('full_name', `%${q}%`).limit(6);
+      document.getElementById('creditSearchResults').innerHTML = (data || []).map(s =>
+        `<div class="row" style="cursor:pointer" onclick="pickCreditStudent('${s.id}','${s.full_name}')">${s.full_name} ${s.email ? '('+s.email+')' : ''}</div>`
+      ).join('');
+    });
+
+    document.getElementById('addCreditBtn').onclick = async () => {
+      const studentId = document.getElementById('creditStudentId').value;
+      const package_name = document.getElementById('packageName').value.trim();
+      const credits_purchased = parseInt(document.getElementById('creditsToAdd').value) || 0;
+      const amount = parseFloat(document.getElementById('amountPaid').value) || null;
+      if (!studentId || credits_purchased <= 0) { setPanelMsg('creditMsg', tt('pickStudentCredits'), 'error'); return; }
+      const { data: student } = await sb.from('profiles').select('credits').eq('id', studentId).single();
+      await sb.from('profiles').update({ credits: (student.credits || 0) + credits_purchased }).eq('id', studentId);
+      await sb.from('subscriptions').insert({ student_id: studentId, package_name, credits_purchased, amount, payment_method: 'manual', confirmed_by: ME.full_name });
+      setPanelMsg('creditMsg', tt('paymentRecorded'), 'ok');
+      loadOwnerPanel();
+    };
+
+    document.getElementById('teacherSearch').addEventListener('input', async (e) => {
+      const q = e.target.value.trim();
+      if (q.length < 2) return;
+      const { data } = await sb.from('profiles').select('id, full_name, email, role').ilike('email', `%${q}%`).limit(6);
+      document.getElementById('teacherSearchResults').innerHTML = (data || []).map(s =>
+        `<div class="row" style="cursor:pointer" onclick="pickTeacherProfile('${s.id}','${s.full_name}')">${s.full_name} (${s.email || ''}) — ${roleLabel(s.role)}</div>`
+      ).join('');
+    });
+
+    document.getElementById('makeTeacherBtn').onclick = async () => {
+      const id = document.getElementById('teacherProfileId').value;
+      if (!id) { setPanelMsg('teacherMsg', tt('pickAccountFirst'), 'error'); return; }
+      const bio = document.getElementById('tBio').value.trim();
+      const photo_url = document.getElementById('tPhoto').value.trim();
+      const video_url = document.getElementById('tVideo').value.trim();
+      const zoom_link = document.getElementById('tZoom').value.trim();
+      await sb.from('profiles').update({ role: 'teacher' }).eq('id', id);
+      const { error } = await sb.from('teachers').insert({ id, bio, photo_url, video_url, zoom_link });
+      setPanelMsg('teacherMsg', error ? tt('teacherMakeError') : tt('teacherMade'), error ? 'error' : 'ok');
+    };
+
+    const { data: students } = await sb.from('profiles').select('full_name, phone, email, credits, level').eq('role', 'student').order('created_at', { ascending: false });
+    document.getElementById('allStudents').innerHTML = (students && students.length)
+      ? students.map(s => `<div class="row"><span>${s.full_name} ${s.phone ? '- '+s.phone : ''}</span><span class="pill">${s.credits} ${tt('lessonsUnit')}</span></div>`).join('')
+      : `<p class="empty">${tt('noStudents')}</p>`;
+
+    const { data: bookings } = await sb.from('bookings')
+      .select('status, profiles(full_name), teachers(profiles(full_name)), availability_slots(slot_time)')
+      .order('created_at', { ascending: false }).limit(30);
+    document.getElementById('allBookings').innerHTML = (bookings && bookings.length)
+      ? bookings.map(b => {
+          const tName = b.teachers && b.teachers.profiles ? b.teachers.profiles.full_name : '';
+          const sName = b.profiles ? b.profiles.full_name : '';
+          const when = b.availability_slots ? new Date(b.availability_slots.slot_time).toLocaleString(LANG==='ar'?'ar-EG':'en-GB') : '';
+          return `<div class="row"><span>${sName} ← ${tName}<br><span style="color:var(--ink-soft);font-size:11.5px">${when}</span></span><span class="pill">${bookingStatusAr(b.status)}</span></div>`;
+        }).join('')
+      : `<p class="empty">${tt('noBookingsOwner')}</p>`;
+
+    const { data: subs2 } = await sb.from('subscriptions').select('amount, package_name, created_at').order('created_at', { ascending: false });
+    const total = (subs2 || []).reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0);
+    document.getElementById('revenueBox').innerHTML = `
+      <div class="row"><span>${tt('totalRecorded')}</span><span class="pill">${total}</span></div>
+      ${(subs2 || []).slice(0,10).map(s => `<div class="row"><span>${s.package_name || ''}</span><span>${s.amount || 0}</span></div>`).join('')}
+    `;
+  }
+
+  window.pickCreditStudent = (id, name) => {
+    document.getElementById('creditStudentId').value = id;
+    document.getElementById('creditSearch').value = name;
+    document.getElementById('creditSearchResults').innerHTML = '';
+  };
+  window.pickTeacherProfile = (id, name) => {
+    document.getElementById('teacherProfileId').value = id;
+    document.getElementById('teacherSearch').value = name;
+    document.getElementById('teacherSearchResults').innerHTML = '';
+  };
+
+  init();
+</script>
+</body>
+</html>

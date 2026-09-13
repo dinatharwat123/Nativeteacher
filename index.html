@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Native Teacher | تعلّم الإنجليزية بسلاسة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --teal-900:#04342C; --teal-800:#085041; --teal-700:#0F6E56; --teal-500:#1D9E75;
+    --teal-300:#5DCAA5; --teal-100:#9FE1CB; --teal-50:#E1F5EE;
+    --coral-700:#712B13; --coral-500:#D85A30; --coral-300:#F0997B; --coral-100:#F5C4B3;
+    --cream:#FFF8EC; --cream-deep:#FAEEDA; --ink:#2C2622; --ink-soft:#6B5D52; --white:#FFFFFF;
+    --pink-500:#D4537E; --pink-200:#F4C0D1; --violet-500:#7F77DD; --violet-200:#CECBF6;
+    --blue-500:#378ADD; --blue-200:#B5D4F4;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body { font-family:'Tajawal',sans-serif; background:var(--cream); color:var(--ink); line-height:1.7; overflow-x:hidden; }
+  body.lang-en { direction:ltr; text-align:left; }
+  .display { font-family:'Fredoka','Tajawal',sans-serif; }
+  img { max-width:100%; display:block; }
+  a { color:inherit; text-decoration:none; }
+  .wrap { max-width:1100px; margin:0 auto; padding:0 24px; }
+
+  header { position:sticky; top:0; z-index:50; background:rgba(255,248,236,.92); backdrop-filter:blur(8px); border-bottom:1px solid rgba(8,80,65,.08); }
+  .header-inner { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; }
+  .logo { font-family:'Fredoka',sans-serif; font-size:22px; font-weight:600; color:var(--teal-800); display:flex; align-items:center; gap:8px; }
+  .logo .dot { width:10px; height:10px; border-radius:50%; background:var(--coral-500); }
+  .header-actions { display:flex; align-items:center; gap:10px; }
+  .lang-toggle,.login-link { border:1.5px solid var(--teal-700); color:var(--teal-800); background:transparent; border-radius:20px; padding:7px 16px; font-size:13px; font-weight:500; font-family:inherit; cursor:pointer; }
+  .cta-small { display:none; background:var(--coral-500); color:var(--white); padding:9px 20px; border-radius:20px; font-size:13px; font-weight:500; }
+  @media (min-width:640px){ .cta-small{ display:inline-block; } }
+
+  .hero { position:relative; padding:56px 0 40px; overflow:hidden; }
+  .hero-blob { position:absolute; border-radius:50%; opacity:.4; z-index:0; }
+  .hero-blob.b1{ width:140px;height:140px;background:var(--coral-300); top:-30px; inset-inline-start:-40px; }
+  .hero-blob.b2{ width:90px;height:90px;background:var(--pink-200); top:40%; inset-inline-end:-20px; }
+  .hero-blob.b3{ width:60px;height:60px;background:var(--teal-100); bottom:10px; inset-inline-start:8%; }
+  .hero-inner { position:relative; z-index:1; display:grid; grid-template-columns:1fr; gap:32px; align-items:center; text-align:center; }
+  @media (min-width:860px){ .hero-inner{ grid-template-columns:1.05fr .95fr; text-align:start; } }
+  .eyebrow { display:inline-flex; align-items:center; gap:8px; background:var(--teal-50); color:var(--teal-800); font-size:13px; font-weight:500; padding:6px 14px; border-radius:20px; margin-bottom:18px; }
+  .hero h1 { font-family:'Fredoka',sans-serif; font-size:clamp(30px,5vw,46px); font-weight:600; color:var(--teal-900); line-height:1.3; margin-bottom:18px; }
+  .hero p.lead { font-size:17px; color:var(--ink-soft); max-width:480px; margin:0 auto 28px; }
+  @media (min-width:860px){ .hero p.lead{ margin-inline:0; } }
+  .hero-ctas { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+  @media (min-width:860px){ .hero-ctas{ justify-content:flex-start; } }
+  .btn-primary { background:var(--coral-500); color:var(--white); padding:15px 32px; border-radius:30px; font-weight:500; font-size:15px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 8px 20px rgba(216,90,48,.25); }
+  .btn-ghost { background:transparent; color:var(--teal-800); padding:15px 24px; border-radius:30px; font-weight:500; font-size:15px; border:1.5px solid var(--teal-700); cursor:pointer; }
+  .hero-art { display:flex; justify-content:center; }
+  .hero-art svg { width:100%; max-width:340px; height:auto; }
+
+  .features { padding:10px 0 56px; }
+  .feature-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  @media (min-width:720px){ .feature-grid{ grid-template-columns:repeat(3,1fr); } }
+  .feature-card { border-radius:20px; padding:22px 18px; text-align:center; }
+  .feature-card .icon { width:44px; height:44px; margin:0 auto 12px; }
+  .feature-card .label { font-size:15px; font-weight:700; }
+  .fc-1{background:var(--coral-100);} .fc-1 .label{color:var(--coral-700);}
+  .fc-2{background:var(--cream-deep);} .fc-2 .label{color:#854F0B;}
+  .fc-3{background:var(--pink-200);} .fc-3 .label{color:#993556;}
+  .fc-4{background:var(--violet-200);} .fc-4 .label{color:#3C3489;}
+  .fc-5{background:var(--blue-200);} .fc-5 .label{color:#0C447C;}
+  .fc-6{background:var(--teal-100);} .fc-6 .label{color:var(--teal-800);}
+
+  .why { background:var(--teal-800); padding:64px 0; color:var(--white); }
+  .why-inner { display:grid; gap:32px; }
+  @media (min-width:860px){ .why-inner{ grid-template-columns:.9fr 1.1fr; align-items:center; } }
+  .why h2 { font-family:'Fredoka',sans-serif; font-size:30px; font-weight:600; margin-bottom:14px; }
+  .why .intro { color:var(--teal-100); font-size:15px; max-width:420px; }
+  .why-points { display:grid; gap:14px; }
+  .why-point { display:flex; align-items:flex-start; gap:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:16px 18px; }
+  .why-point .icn { flex-shrink:0; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:var(--teal-500); font-size:16px; }
+  .why-point .txt { font-size:14.5px; color:#E7F5EF; }
+  .why-point .txt b { display:block; font-size:15px; color:var(--white); margin-bottom:2px; }
+
+  .teachers { padding:64px 0; }
+  .section-head { text-align:center; margin-bottom:36px; }
+  .section-head h2 { font-family:'Fredoka',sans-serif; font-size:28px; color:var(--teal-900); margin-bottom:8px; }
+  .section-head p { color:var(--ink-soft); font-size:15px; }
+  .teacher-grid { display:grid; grid-template-columns:1fr; gap:20px; }
+  @media (min-width:640px){ .teacher-grid{ grid-template-columns:repeat(2,1fr); } }
+  .teacher-card { background:var(--white); border:1px solid rgba(8,80,65,.08); border-radius:22px; padding:24px; text-align:center; box-shadow:0 10px 30px rgba(8,80,65,.06); }
+  .avatar { width:84px; height:84px; border-radius:50%; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-size:26px; font-weight:600; color:var(--white); object-fit:cover; overflow:hidden; }
+  .teacher-card h3 { font-size:17px; margin-bottom:4px; }
+  .teacher-card .badge { display:inline-block; font-size:12px; color:var(--teal-700); background:var(--teal-50); padding:3px 12px; border-radius:12px; margin-bottom:14px; }
+  .video-frame { position:relative; width:100%; padding-top:177%; border-radius:16px; overflow:hidden; background:var(--ink); }
+  .video-frame iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .video-placeholder { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.6); font-size:13px; }
+  #teachersList.loading::after { content:"..."; display:block; text-align:center; color:var(--ink-soft); padding:20px; }
+
+  .level-test-card { background:var(--white); border:1px solid rgba(8,80,65,.08); border-radius:22px; padding:26px 22px;
+                      box-shadow:0 10px 30px rgba(8,80,65,.06); direction:ltr; text-align:left; }
+  .lt-progress { display:flex; gap:4px; margin-bottom:18px; }
+  .lt-progress span { flex:1; height:4px; border-radius:3px; background:#EDE7D9; }
+  .lt-progress span.done { background:var(--teal-500); }
+  .lt-progress span.current { background:var(--coral-500); }
+  .lt-question { font-size:16px; font-weight:700; color:var(--ink); margin-bottom:16px; line-height:1.5; }
+  .lt-options { display:grid; gap:10px; }
+  .lt-opt { width:100%; text-align:left; padding:13px 16px; border-radius:12px; border:1.5px solid var(--border);
+            background:#FCFAF4; font-family:inherit; font-size:14px; color:var(--ink); cursor:pointer; transition:border-color .15s ease, background .15s ease; }
+  .lt-opt:hover:not(:disabled) { border-color:var(--teal-500); }
+  .lt-opt:focus { outline:none; }
+  .lt-opt.correct { background:var(--teal-50); border-color:var(--teal-500); color:var(--teal-900); font-weight:700; }
+  .lt-opt.wrong { background:var(--coral-100); border-color:var(--coral-500); color:var(--coral-700); font-weight:700; }
+  .lt-opt:disabled { cursor:default; }
+  .lt-result { text-align:center; }
+  .lt-result .badge-level { display:inline-block; font-family:'Fredoka',sans-serif; font-size:22px; color:var(--teal-800);
+                             background:var(--teal-50); border-radius:16px; padding:14px 28px; margin:12px 0 18px; }
+  .lt-result p { color:var(--ink-soft); font-size:14px; margin-bottom:18px; }
+
+  .final-cta { background:var(--cream-deep); padding:56px 0; text-align:center; }
+  .final-cta h2 { font-family:'Fredoka',sans-serif; font-size:26px; color:var(--teal-900); margin-bottom:12px; }
+  .final-cta p { color:var(--ink-soft); margin-bottom:24px; }
+  .whatsapp-link { display:inline-flex; align-items:center; gap:8px; color:var(--teal-800); font-size:14px; font-weight:500; margin-top:18px; }
+
+  footer { background:var(--teal-900); color:var(--teal-100); padding:32px 0; text-align:center; font-size:13px; }
+  .social-row { display:flex; justify-content:center; gap:16px; margin-bottom:16px; }
+  .social-row a { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.08); display:flex; align-items:center; justify-content:center; }
+
+  [data-lang="en"] { display:none; }
+  body.lang-en [data-lang="ar"] { display:none; }
+  body.lang-en [data-lang="en"] { display:inline; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo"><span class="dot"></span> Native Teacher</div>
+    <div class="header-actions">
+      <a href="#booking" class="cta-small" data-lang="ar">احجز حصتك المجانية</a>
+      <a href="#booking" class="cta-small" data-lang="en">Book free trial</a>
+      <a href="auth.html" class="login-link"><span data-lang="ar">تسجيل الدخول</span><span data-lang="en">Login</span></a>
+      <button class="lang-toggle" id="langBtn">EN</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-blob b1"></div><div class="hero-blob b2"></div><div class="hero-blob b3"></div>
+  <div class="wrap hero-inner">
+    <div>
+      <span class="eyebrow">
+        <span data-lang="ar">🎓 مدرسون متحدثون أصليون للغة</span>
+        <span data-lang="en">🎓 Native English speaking teachers</span>
+      </span>
+      <h1>
+        <span data-lang="ar">تعلّم الإنجليزية بسلاسة</span>
+        <span data-lang="en">Learn English, the natural way</span>
+      </h1>
+      <p class="lead">
+        <span data-lang="ar">مدرسون أجانب، ألعاب وبنوك أسئلة للأطفال والكبار — خطة تعليمية خاصة بكل طالب.</span>
+        <span data-lang="en">Foreign teachers, games and question banks for kids and adults — a personal plan for every student.</span>
+      </p>
+      <div class="hero-ctas">
+        <a href="#booking" class="btn-primary">
+          <span data-lang="ar">ابدأ حصتك المجانية</span><span data-lang="en">Start your free trial</span> ▶
+        </a>
+        <a href="#teachers" class="btn-ghost">
+          <span data-lang="ar">تعرّف على المدرسين</span><span data-lang="en">Meet the teachers</span>
+        </a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="62" r="36" fill="#F5C4B3"/>
+        <path d="M65 55 Q100 15 135 55 L130 32 Q100 20 70 32 Z" fill="#4A1B0C"/>
+        <circle cx="85" cy="62" r="4.5" fill="#4A1B0C"/><circle cx="115" cy="62" r="4.5" fill="#4A1B0C"/>
+        <path d="M84 76 Q100 88 116 76" stroke="#4A1B0C" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M52 190 Q52 118 100 118 Q148 118 148 190 Z" fill="#1D9E75"/>
+        <circle cx="32" cy="150" r="17" fill="#F5C4B3"/><circle cx="168" cy="150" r="17" fill="#F5C4B3"/>
+        <rect x="10" y="112" width="42" height="30" rx="8" fill="#FAC775"/>
+        <circle cx="24" cy="127" r="5" fill="#D85A30"/><circle cx="38" cy="127" r="5" fill="#5DCAA5"/>
+        <rect x="148" y="112" width="42" height="30" rx="8" fill="#D4537E"/>
+        <path d="M160 127 L172 118 L172 136 Z" fill="#ffffff"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="wrap feature-grid">
+    <div class="feature-card fc-1"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#712B13" stroke-width="1.7"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8-5.1-4.7 6.9-.8L12 2z"/></svg>
+      <div class="label"><span data-lang="ar">5 سنوات خبرة</span><span data-lang="en">5 years experience</span></div></div>
+    <div class="feature-card fc-2"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#854F0B" stroke-width="1.7"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="8.5" r="2.5"/><path d="M15.5 14.2c2.7.4 4.5 2.3 4.5 5.3"/></svg>
+      <div class="label"><span data-lang="ar">+2000 طالب</span><span data-lang="en">+2000 students</span></div></div>
+    <div class="feature-card fc-3"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#993556" stroke-width="1.7"><path d="M12 3a2.5 2.5 0 0 1 2.5 2.5c0 .9-.5 1.6-1.2 2.1.7-.3 1.5-.1 2 .4a2.2 2.2 0 1 1-3 3.2c.5.5.7 1.3.4 2 .5-.7 1.2-1.2 2.1-1.2A2.5 2.5 0 1 1 12 16.5a2.5 2.5 0 1 1-2.5-2.5c.9 0 1.6.5 2.1 1.2-.3-.7-.1-1.5.4-2a2.2 2.2 0 1 1 3.2-3c-.5.5-1.3.7-2 .4.7.5 1.2 1.2 1.2 2.1A2.5 2.5 0 0 1 12 12"/></svg>
+      <div class="label"><span data-lang="ar">ألعاب تعليمية</span><span data-lang="en">Learning games</span></div></div>
+    <div class="feature-card fc-4"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#3C3489" stroke-width="1.7"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+      <div class="label"><span data-lang="ar">امتحانات وبنوك أسئلة</span><span data-lang="en">Tests &amp; question banks</span></div></div>
+    <div class="feature-card fc-5"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#0C447C" stroke-width="1.7"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg>
+      <div class="label"><span data-lang="ar">حصص فردية 1:1</span><span data-lang="en">1:1 private lessons</span></div></div>
+    <div class="feature-card fc-6"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#085041" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3z"/></svg>
+      <div class="label"><span data-lang="ar">متحدثون أصليون للغة</span><span data-lang="en">Native speakers</span></div></div>
+  </div>
+</section>
+
+<section class="why">
+  <div class="wrap why-inner">
+    <div>
+      <h2><span data-lang="ar">لماذا نحن؟</span><span data-lang="en">Why us?</span></h2>
+      <p class="intro">
+        <span data-lang="ar">فريقنا بالكامل من المدرسين الأجانب الناطقين الأصليين، وكل طالب له خطته التعليمية الخاصة.</span>
+        <span data-lang="en">Our entire team is native English speaking foreign teachers, and every student gets their own learning plan.</span>
+      </p>
+    </div>
+    <div class="why-points">
+      <div class="why-point"><div class="icn">🌍</div><div class="txt">
+        <b data-lang="ar">متحدثون أصليون</b><b data-lang="en">Native speakers</b>
+        <span data-lang="ar">من جنوب أفريقيا وبريطانيا وكندا، وكلهم حاصلون على شهادة TEFL المعتمدة.</span>
+        <span data-lang="en">From South Africa, the UK and Canada — all TEFL certified.</span>
+      </div></div>
+      <div class="why-point"><div class="icn">🧩</div><div class="txt">
+        <b data-lang="ar">خطة خاصة لكل طالب</b><b data-lang="en">A plan just for you</b>
+        <span data-lang="ar">كل طالب قصته، ولكل طالب خطته الخاصة المصممة له وحده.</span>
+        <span data-lang="en">Every student has a story — and a plan designed just for them.</span>
+      </div></div>
+      <div class="why-point"><div class="icn">🎮</div><div class="txt">
+        <b data-lang="ar">تعلّم بالمتعة</b><b data-lang="en">Learn through play</b>
+        <span data-lang="ar">ألعاب واختبارات تفاعلية تجعل تعلم اللغة ممتعًا.</span>
+        <span data-lang="en">Interactive games and quizzes that make learning fun.</span>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section class="teachers" id="teachers">
+  <div class="wrap">
+    <div class="section-head">
+      <h2><span data-lang="ar">تعرّف على مدرسينا</span><span data-lang="en">Meet our teachers</span></h2>
+      <p><span data-lang="ar">متحدثون أصليون، حاصلون على شهادة TEFL المعتمدة</span><span data-lang="en">Native speakers, TEFL certified</span></p>
+    </div>
+    <div class="teacher-grid loading" id="teachersList"></div>
+  </div>
+</section>
+
+<section class="teachers" id="freegame" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head">
+      <h2><span data-lang="ar">اختبري مستواك مجانًا</span><span data-lang="en">Test your level for free</span></h2>
+      <p><span data-lang="ar">بدون أي تسجيل — 10 أسئلة بالإنجليزية بالكامل، صعوبتها تتدرج</span><span data-lang="en">No sign-up needed — 10 questions, entirely in English, increasing in difficulty</span></p>
+    </div>
+    <div class="level-test-card" style="max-width:480px;margin:0 auto">
+      <div id="gameBox"></div>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta" id="booking">
+  <div class="wrap">
+    <h2><span data-lang="ar">جاهز تبدأ؟</span><span data-lang="en">Ready to start?</span></h2>
+    <p><span data-lang="ar">احجز حصتك التجريبية المجانية الآن، وابدأ رحلتك مع اللغة الإنجليزية</span>
+       <span data-lang="en">Book your free trial lesson now and start your English journey</span></p>
+    <a href="auth.html" class="btn-primary">
+      <span data-lang="ar">احجز حصة تجريبية مجانية</span><span data-lang="en">Book a free trial lesson</span> ▶
+    </a>
+    <br>
+    <a href="https://wa.me/966000000000" class="whatsapp-link" target="_blank">
+      💬 <span data-lang="ar">تواصل معنا لمعرفة الباقة المناسبة لك وعدد الحصص</span>
+      <span data-lang="en">Contact us to find the right plan and number of sessions for you</span>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="social-row">
+      <a href="#" aria-label="Instagram">📷</a><a href="#" aria-label="Facebook">📘</a><a href="#" aria-label="TikTok">🎵</a>
+    </div>
+    <div>Native Teacher — <span data-lang="ar">جميع الحقوق محفوظة</span><span data-lang="en">All rights reserved</span></div>
+  </div>
+</footer>
+
+<script>
+  // ====== FILL THESE TWO IN FROM SUPABASE > SETTINGS > API ======
+  const SUPABASE_URL = "https://qdwzaftxnrhdgjisctjl.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_lKp3qizAsITLNnSl1aMt9w_BB3XpvMC";
+  // ================================================================
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const avatarColors = ['#5DCAA5','#D4537E','#7F77DD','#378ADD'];
+
+  async function loadTeachers() {
+    const list = document.getElementById('teachersList');
+    const { data, error } = await sb
+      .from('teachers')
+      .select('id, bio, photo_url, video_url, tefl, specialty, profiles(full_name)')
+      .limit(10);
+
+    list.classList.remove('loading');
+    if (error || !data || data.length === 0) {
+      list.innerHTML = '<p style="text-align:center;color:var(--ink-soft)">لا يوجد مدرسون مضافون بعد</p>';
+      return;
+    }
+
+    list.innerHTML = data.map((t, i) => {
+      const name = t.profiles ? t.profiles.full_name : 'Teacher';
+      const initial = name.charAt(0).toUpperCase();
+      const color = avatarColors[i % avatarColors.length];
+      const avatar = t.photo_url
+        ? `<img class="avatar" src="${t.photo_url}" alt="${name}">`
+        : `<div class="avatar" style="background:${color}">${initial}</div>`;
+      const video = t.video_url
+        ? `<div class="video-frame"><iframe src="${t.video_url}" allowfullscreen title="${name} intro"></iframe></div>`
+        : `<div class="video-frame"><div class="video-placeholder">
+             <span data-lang="ar">الفيديو التعريفي قريبًا</span><span data-lang="en">Intro video coming soon</span>
+           </div></div>`;
+      return `
+        <div class="teacher-card">
+          ${avatar}
+          <h3>${name}</h3>
+          <div class="badge">TEFL <span data-lang="ar">معتمد</span><span data-lang="en">certified</span></div>
+          ${video}
+        </div>`;
+    }).join('');
+  }
+
+  loadTeachers();
+
+  // ---------- Free level test (English only, difficulty increases, no login needed) ----------
+  const LEVEL_TEST = [
+    { q:'She ___ from Canada.', options:['is','are','am','be'], correct:0 },
+    { q:'Choose the plural of "child".', options:['childs','childes','children','childrens'], correct:2 },
+    { q:'I ___ coffee every morning.', options:['drink','drinks','drinking','drank'], correct:0 },
+    { q:'This is ___ book than mine.', options:['gooder','more good','better','best'], correct:2 },
+    { q:'They have lived here ___ 2019.', options:['for','since','from','at'], correct:1 },
+    { q:'If it rains, we ___ stay home.', options:['will','would','was','were'], correct:0 },
+    { q:'By next year, she ___ her degree.', options:['will finish','will have finished','finishes','finished'], correct:1 },
+    { q:'He speaks English as if he ___ a native speaker.', options:['were','was','is','be'], correct:0 },
+    { q:'Choose the correct passive form: "They built this house in 1990."', options:['This house was built in 1990.','This house is built in 1990.','This house built in 1990.','This house has built in 1990.'], correct:0 },
+    { q:'Had I known earlier, I ___ differently.', options:['would act','would have acted','will act','acted'], correct:1 }
+  ];
+  let ltIndex = 0, ltScore = 0;
+
+  function renderLevelTest() {
+    const box = document.getElementById('gameBox');
+    if (ltIndex >= LEVEL_TEST.length) {
+      const level = ltScore <= 3 ? 'Beginner' : ltScore <= 6 ? 'Intermediate' : 'Advanced';
+      box.innerHTML = `
+        <div class="lt-result">
+          <p style="font-size:13px;color:var(--ink-soft);margin-bottom:4px">Your score: ${ltScore} / ${LEVEL_TEST.length}</p>
+          <div class="badge-level">${level}</div>
+          <p style="font-size:12px">This is a quick indicative test, not an official assessment.</p>
+          <p>Want a full assessment and a personal plan with a native-speaking teacher?</p>
+          <a href="auth.html" class="btn-primary">Book a free trial lesson ▶</a>
+          <div style="margin-top:12px">
+            <button class="lt-opt" style="max-width:160px;margin:0 auto" onclick="restartLevelTest()">Retake test</button>
+          </div>
+        </div>`;
+      return;
+    }
+    const q = LEVEL_TEST[ltIndex];
+    box.innerHTML = `
+      <div class="lt-progress">
+        ${LEVEL_TEST.map((_, i) => `<span class="${i < ltIndex ? 'done' : i === ltIndex ? 'current' : ''}"></span>`).join('')}
+      </div>
+      <p style="font-size:11px;color:var(--ink-soft);margin-bottom:6px">Question ${ltIndex + 1} of ${LEVEL_TEST.length}</p>
+      <p class="lt-question">${q.q}</p>
+      <div class="lt-options">
+        ${q.options.map((o, i) => `<button type="button" class="lt-opt" data-i="${i}" onclick="answerLevelTest(${i})">${o}</button>`).join('')}
+      </div>`;
+  }
+
+  window.answerLevelTest = function(i) {
+    const q = LEVEL_TEST[ltIndex];
+    if (i === q.correct) ltScore++;
+    document.querySelectorAll('.lt-opt').forEach(btn => {
+      const bi = parseInt(btn.dataset.i);
+      btn.disabled = true;
+      if (bi === q.correct) btn.classList.add('correct');
+      else if (bi === i) btn.classList.add('wrong');
+    });
+    setTimeout(() => { ltIndex++; renderLevelTest(); }, 500);
+  };
+  window.restartLevelTest = function() { ltIndex = 0; ltScore = 0; renderLevelTest(); };
+
+  const langBtn = document.getElementById('langBtn');
+  let currentLang = 'ar';
+  langBtn.addEventListener('click', () => {
+    if (currentLang === 'ar') {
+      currentLang = 'en';
+      document.documentElement.lang = 'en'; document.documentElement.dir = 'ltr';
+      document.body.classList.add('lang-en'); langBtn.textContent = 'AR';
+    } else {
+      currentLang = 'ar';
+      document.documentElement.lang = 'ar'; document.documentElement.dir = 'rtl';
+      document.body.classList.remove('lang-en'); langBtn.textContent = 'EN';
+    }
+    renderLevelTest();
+  });
+
+  renderLevelTest();
+</script>
+</body>
+</html>
