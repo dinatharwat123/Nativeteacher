@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Native Teacher | تسجيل الدخول</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Fredoka:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{ --teal-900:#04342C; --teal-800:#085041; --teal-700:#0F6E56; --coral-500:#D85A30;
+         --cream:#FFF8EC; --ink:#2C2622; --ink-soft:#6B5D52; --white:#fff; --border:#E5DFD2; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Tajawal',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh;
+         display:flex; align-items:center; justify-content:center; padding:24px; }
+  body.lang-en { direction:ltr; text-align:left; }
+  .card { background:var(--white); border-radius:24px; padding:32px 28px; max-width:420px; width:100%;
+          box-shadow:0 20px 50px rgba(8,80,65,.1); position:relative; }
+  .langbtn { position:absolute; top:20px; inset-inline-end:20px; border:1.5px solid var(--teal-700); color:var(--teal-800);
+             background:transparent; border-radius:16px; padding:5px 12px; font-size:12px; cursor:pointer; font-family:inherit; }
+  .logo { font-family:'Fredoka',sans-serif; font-size:22px; font-weight:600; color:var(--teal-800);
+          text-align:center; margin-bottom:6px; }
+  .sub { text-align:center; color:var(--ink-soft); font-size:13px; margin-bottom:24px; }
+  .tabs { display:flex; background:#F1ECE0; border-radius:14px; padding:4px; margin-bottom:22px; }
+  .tab { flex:1; text-align:center; padding:10px; border-radius:10px; font-size:14px; font-weight:500;
+         cursor:pointer; color:var(--ink-soft); }
+  .tab.active { background:var(--white); color:var(--teal-800); box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  form { display:none; flex-direction:column; gap:14px; }
+  form.active { display:flex; }
+  input { padding:13px 16px; border-radius:12px; border:1.5px solid var(--border); font-family:inherit;
+          font-size:14px; background:#FCFAF4; }
+  input:focus { outline:none; border-color:var(--teal-700); }
+  button.submit { background:var(--coral-500); color:var(--white); border:none; padding:14px; border-radius:14px;
+                  font-weight:500; font-size:15px; cursor:pointer; margin-top:4px; font-family:inherit; }
+  .msg { font-size:13px; text-align:center; margin-top:14px; min-height:16px; }
+  .msg.error { color:#B3261E; }
+  .msg.ok { color:var(--teal-700); }
+  .back { display:block; text-align:center; margin-top:18px; font-size:13px; color:var(--ink-soft); text-decoration:none; }
+  .forgot-link { display:block; text-align:center; margin-top:2px; font-size:12.5px; color:var(--teal-700); cursor:pointer; text-decoration:underline; }
+  [data-lang="en"] { display:none; }
+  body.lang-en [data-lang="ar"] { display:none; }
+  body.lang-en [data-lang="en"] { display:inline; }
+</style>
+</head>
+<body>
+<div class="card">
+  <button class="langbtn" id="langBtn">EN</button>
+  <div class="logo">Native Teacher</div>
+  <div class="sub">
+    <span data-lang="ar">سجّل دخولك أو اعمل حساب جديد كطالب</span>
+    <span data-lang="en">Log in or create a new student account</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="login">
+      <span data-lang="ar">تسجيل الدخول</span><span data-lang="en">Login</span>
+    </div>
+    <div class="tab" data-tab="signup">
+      <span data-lang="ar">حساب جديد</span><span data-lang="en">Sign up</span>
+    </div>
+  </div>
+
+  <form id="loginForm" class="active">
+    <input type="email" id="loginEmail" data-ph-ar="البريد الإلكتروني" data-ph-en="Email" required>
+    <input type="password" id="loginPass" data-ph-ar="كلمة المرور" data-ph-en="Password" required>
+    <button type="submit" class="submit"><span data-lang="ar">دخول</span><span data-lang="en">Log in</span></button>
+  </form>
+
+  <form id="signupForm">
+    <input type="text" id="signupName" data-ph-ar="الاسم بالكامل" data-ph-en="Full name" required>
+    <input type="tel" id="signupPhone" data-ph-ar="رقم الموبايل" data-ph-en="Phone number" required>
+    <input type="email" id="signupEmail" data-ph-ar="البريد الإلكتروني" data-ph-en="Email" required>
+    <input type="password" id="signupPass" data-ph-ar="كلمة المرور" data-ph-en="Password" required minlength="6">
+    <button type="submit" class="submit"><span data-lang="ar">إنشاء الحساب</span><span data-lang="en">Create account</span></button>
+  </form>
+
+  <!-- NEW: forgot password form -->
+  <form id="forgotForm">
+    <input type="email" id="forgotEmail" data-ph-ar="البريد الإلكتروني" data-ph-en="Email" required>
+    <button type="submit" class="submit"><span data-lang="ar">إرسال رابط إعادة التعيين</span><span data-lang="en">Send reset link</span></button>
+  </form>
+
+  <div id="forgotLinkWrap">
+    <span class="forgot-link" id="forgotLink">
+      <span data-lang="ar">نسيت كلمة المرور؟</span>
+      <span data-lang="en">Forgot your password?</span>
+    </span>
+  </div>
+
+  <div class="msg" id="msg"></div>
+  <a href="index.html" class="back">
+    <span data-lang="ar">⟵ العودة للصفحة الرئيسية</span>
+    <span data-lang="en">Back to homepage ⟶</span>
+  </a>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://qdwzaftxnrhdgjisctjl.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_lKp3qizAsITLNnSl1aMt9w_BB3XpvMC";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let LANG = 'ar';
+
+  const MESSAGES = {
+    loggingIn:    { ar:'جاري الدخول...', en:'Logging in...' },
+    badLogin:     { ar:'بيانات الدخول غير صحيحة', en:'Incorrect login details' },
+    creating:     { ar:'جاري إنشاء الحساب...', en:'Creating your account...' },
+    confirmEmail: { ar:'اتعمل الحساب، تحقّق من إيميلك لتأكيده ثم سجّل دخول', en:'Account created — please confirm your email, then log in' },
+    created:      { ar:'تم إنشاء الحساب بنجاح!', en:'Account created successfully!' },
+    sendingReset: { ar:'جاري إرسال الرابط...', en:'Sending reset link...' },
+    resetSent:    { ar:'اتبعت لك رسالة على إيميلك فيها رابط لإعادة تعيين كلمة المرور', en:'We sent you an email with a password reset link' },
+    resetError:   { ar:'حصل خطأ، تأكدي من الإيميل وحاولي تاني', en:'Something went wrong, please check the email and try again' }
+  };
+
+  const msg = document.getElementById('msg');
+  const setMsg = (key, type) => { msg.textContent = MESSAGES[key][LANG]; msg.className = 'msg ' + (type || ''); };
+
+  function applyPlaceholders() {
+    document.querySelectorAll('[data-ph-ar]').forEach(el => {
+      el.placeholder = LANG === 'ar' ? el.dataset.phAr : el.dataset.phEn;
+    });
+  }
+  applyPlaceholders();
+
+  document.getElementById('langBtn').addEventListener('click', () => {
+    LANG = LANG === 'ar' ? 'en' : 'ar';
+    document.documentElement.lang = LANG;
+    document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+    document.body.classList.toggle('lang-en', LANG === 'en');
+    document.getElementById('langBtn').textContent = LANG === 'ar' ? 'EN' : 'AR';
+    applyPlaceholders();
+  });
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('form').forEach(f => f.classList.remove('active'));
+      document.getElementById('forgotLinkWrap').style.display = 'block';
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab + 'Form').classList.add('active');
+      msg.textContent = ''; msg.className = 'msg';
+    });
+  });
+
+  // NEW: forgot password toggle
+  document.getElementById('forgotLink').addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('form').forEach(f => f.classList.remove('active'));
+    document.getElementById('forgotForm').classList.add('active');
+    document.getElementById('forgotLinkWrap').style.display = 'none';
+    msg.textContent = ''; msg.className = 'msg';
+  });
+
+  document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setMsg('sendingReset');
+    const email = document.getElementById('forgotEmail').value.trim();
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+    if (error) { setMsg('resetError', 'error'); return; }
+    setMsg('resetSent', 'ok');
+  });
+
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session) window.location.href = 'dashboard.html';
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setMsg('loggingIn');
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPass').value;
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) { setMsg('badLogin', 'error'); return; }
+    window.location.href = 'dashboard.html';
+  });
+
+  document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setMsg('creating');
+    const full_name = document.getElementById('signupName').value.trim();
+    const phone = document.getElementById('signupPhone').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPass').value;
+
+    const { data: signUpData, error: signUpError } = await sb.auth.signUp({ email, password });
+    if (signUpError) { msg.textContent = signUpError.message; msg.className = 'msg error'; return; }
+
+    const authUserId = signUpData.user ? signUpData.user.id : null;
+    if (!authUserId) { setMsg('confirmEmail', 'ok'); return; }
+
+    // نحاول الأول نربط بحساب طالب سبق وتضاف يدويًا من المالكة (بنفس الإيميل)
+    const { data: claimResult } = await sb.rpc('claim_profile', { p_email: email, p_full_name: full_name, p_phone: phone });
+
+    if (!claimResult || !claimResult.claimed) {
+      await sb.from('profiles').insert({ auth_user_id: authUserId, full_name, phone, email, role: 'student', credits: 0 });
+    }
+
+    setMsg('created', 'ok');
+    setTimeout(() => window.location.href = 'dashboard.html', 800);
+  });
+</script>
+</body>
+</html>

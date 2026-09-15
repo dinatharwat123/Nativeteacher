@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard.html
+
+Sitemap: https://nativeteacher.vercel.app/sitemap.xml
